@@ -1,9 +1,12 @@
 <script setup>
     import { reactive, onMounted } from 'vue';
-    import { useRoute, RouterLink } from 'vue-router';
+    import { useRoute, RouterLink, useRouter } from 'vue-router';
     import axios from 'axios';
+    import { useToast } from 'vue-toastification';
 
     const route = useRoute();
+    const router = useRouter();
+    const toast = useToast();
 
     const jobId = route.params.id;
 
@@ -11,9 +14,23 @@
         job: {},
     });
 
+    const deleteJob = async () => {
+        try {
+            const confirm = window.confirm('Are you sure you want to delete this job?');
+            if(confirm){
+                await axios.delete(`/api/jobs/${jobId}`);
+                toast.success('Job Deleted Successfully');
+                router.push('/jobs');
+            }
+        } catch (error) {
+            console.error('Error deleting Job', error);
+            toast.error('Job not deleted');
+        }
+    }
+
     onMounted(async () => {
         try {
-            const response = await axios.get(`http://localhost:3001/jobs/${jobId}`);
+            const response = await axios.get(`/api/jobs/${jobId}`);
             state.job = response.data;
         } catch (error) {
             console.error('Error fetching job', error);
@@ -30,15 +47,17 @@
                         <div class="text-gray-500 mb-4">{{ state.job.type }}</div>
                         <h1 class="text-3xl font-bold mb-4">{{ state.job.title }}</h1>
                         <div class="text-gray-500 mb-4 flex align-middle justify-center md:justify-start">
-                            <i class="fa-solid fa-location-dot text-lg text-orange-700 mr-2"></i>
-                            <p class="text-orange-700">{{state.job.location}}</p>
+                            <div class="text-orange-700 mb-3">
+                                <i class="pi pi-map-marker text-orange-700"></i>
+                                {{state.job.location}}
+                            </div>
                         </div>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-md mt-6">
                         <h3 class="text-green-800 text-lg font-bold mb-6">Job Description</h3>
 
-                        <p class="mb-4">{{state.job.description}}.</p>
+                        <p class="mb-4">{{state.job.description}}</p>
 
                         <h3 class="text-green-800 text-lg font-bold mb-2">Salary</h3>
 
@@ -73,7 +92,7 @@
                         <RouterLink :to="`/jobs/edit/${state.job.id}`" class="bg-green-500 hover:bg-green-600 text-white text-center font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block">
                             Edit Job
                         </RouterLink>
-                        <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block">
+                        <button  @click="deleteJob" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block">
                             Delete Job
                         </button>
                     </div>
